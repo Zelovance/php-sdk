@@ -1,0 +1,29 @@
+{
+  "name": "zelovance/php-sdk",
+  "description": "SDK PHP officiel pour l'API de facturation Zelovance.",
+  "version": "0.1.0",
+  "type": "library",
+  "license": "proprietary",
+  "keywords": ["zelovance", "facturation", "invoice", "api", "sdk"],
+  "require": {
+    "php": "^8.2",
+    "ext-curl": "*",
+    "ext-json": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "Zelovance\\Sdk\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Zelovance\\Sdk\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "test": "php tests/smoke.php"
+  },
+  "config": {
+    "sort-packages": true
+  }
+}
