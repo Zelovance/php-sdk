@@ -247,3 +247,7 @@ composer test
 - aucune modification, suppression ou émission de facture ;
 - les résultats sont retournés sous forme de tableaux PHP afin de conserver le contrat JSON sans perte ;
 - les paramètres de filtrage des listes sont transmis tels quels, mais seuls ceux réellement pris en charge par l’API Zelovance auront un effet.
+
+## Licence
+
+Ce SDK est distribué sous licence MIT. Consultez [LICENSE](LICENSE).

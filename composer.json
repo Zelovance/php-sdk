@@ -1,9 +1,8 @@
 {
   "name": "zelovance/php-sdk",
   "description": "SDK PHP officiel pour l'API de facturation Zelovance.",
-  "version": "0.1.0",
   "type": "library",
-  "license": "proprietary",
+  "license": "MIT",
   "keywords": ["zelovance", "facturation", "invoice", "api", "sdk"],
   "require": {
     "php": "^8.2",
