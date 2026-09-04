@@ -7,6 +7,7 @@ namespace Zelovance\Sdk\Http;
 use CurlHandle;
 use Zelovance\Sdk\Contracts\TransportInterface;
 use Zelovance\Sdk\Exceptions\TransportException;
+use Zelovance\Sdk\ZelovanceClient;
 
 final class NativeCurlTransport implements TransportInterface
 {
@@ -38,7 +39,7 @@ final class NativeCurlTransport implements TransportInterface
             CURLOPT_CONNECTTIMEOUT => min($timeout, 10),
             CURLOPT_TIMEOUT => $timeout,
             CURLOPT_HTTPHEADER => $headerLines,
-            CURLOPT_USERAGENT => $headers['User-Agent'] ?? 'Zelovance-PHP-SDK/0.1.0',
+            CURLOPT_USERAGENT => $headers['User-Agent'] ?? 'Zelovance-PHP-SDK/' . ZelovanceClient::VERSION,
             CURLOPT_HEADERFUNCTION => static function ($curl, string $line) use (&$responseHeaders): int {
                 $length = strlen($line);
                 $trimmed = trim($line);

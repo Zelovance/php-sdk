@@ -24,11 +24,11 @@ spl_autoload_register(static function (string $class) use ($root): void {
     }
 });
 
-use Zelovance\Sdk\Exceptions\ValidationException;
 use Zelovance\Sdk\Exceptions\ApiException;
 use Zelovance\Sdk\Exceptions\AuthorizationException;
 use Zelovance\Sdk\Exceptions\IdempotencyConflictException;
 use Zelovance\Sdk\Exceptions\RateLimitException;
+use Zelovance\Sdk\Exceptions\ValidationException;
 use Zelovance\Sdk\Http\Response;
 use Zelovance\Sdk\Invoices\InvoiceBuilder;
 use Zelovance\Sdk\Tests\FakeTransport;
@@ -45,6 +45,23 @@ function assertTrue(bool $condition, string $message): void
 $contactUuid = 'b6b6b6b6-1111-4a1a-9d3e-0f1c2b3a4d5e';
 $invoiceUuid = '6f2e4b0a-2222-4a1a-9d3e-0f1c2b3a4d5e';
 $productUuid = 'a3d80ae2-02d5-45b2-8a4d-16a6e11f7654';
+$secondProductUuid = 'd1b4a650-6fc2-4ccc-91de-26f20e60a071';
+
+$productData = [
+    'uuid' => $productUuid,
+    'type' => 'service',
+    'code' => 'ACCOMP-DEV',
+    'name' => 'Accompagnement au développement',
+    'description' => 'Prestation facturée à la journée.',
+    'unit_price' => 750,
+    'currency' => 'EUR',
+    'unit' => 'jour',
+    'vat_rate' => 20,
+    'is_active' => true,
+    'is_catalog' => true,
+];
+$secondProductData = [...$productData, 'uuid' => $secondProductUuid, 'code' => 'AUDIT', 'name' => 'Audit'];
+$updatedProductData = [...$productData, 'type' => 'product', 'name' => 'Licence matérielle'];
 
 $transport = new FakeTransport(
     new Response(200, ['content-type' => 'application/json'], json_encode([
@@ -55,32 +72,35 @@ $transport = new FakeTransport(
     new Response(200, ['content-type' => 'application/json'], json_encode([
         'data' => ['uuid' => $contactUuid, 'company_name' => 'Client test'],
     ], JSON_THROW_ON_ERROR)),
-    new Response(201, ['content-type' => 'application/json'], json_encode([
-        'data' => [
-            'uuid' => $productUuid,
-            'type' => 'service',
-            'code' => 'ACCOMP-DEV',
-            'name' => 'Accompagnement au développement',
-            'description' => 'Prestation facturée à la journée.',
-            'unit_price' => 750,
-            'currency' => 'EUR',
-            'unit' => 'jour',
-            'vat_rate' => 20,
-            'is_active' => true,
-            'is_catalog' => true,
-        ],
-    ], JSON_THROW_ON_ERROR)),
-    new Response(201, ['content-type' => 'application/json'], json_encode([
-        'data' => [
-            'uuid' => $invoiceUuid,
-            'status' => 'draft',
-        ],
+    new Response(200, ['content-type' => 'application/json'], json_encode([
+        'data' => [$productData],
+        'links' => ['next' => 'https://dev.zelovance.com/api/v1/products?page=2'],
+        'meta' => ['current_page' => 1, 'last_page' => 2, 'total' => 2],
     ], JSON_THROW_ON_ERROR)),
     new Response(200, ['content-type' => 'application/json'], json_encode([
-        'data' => [
-            'uuid' => $invoiceUuid,
-            'status' => 'draft',
-        ],
+        'data' => [$productData],
+        'links' => ['next' => 'https://dev.zelovance.com/api/v1/products?page=2'],
+        'meta' => ['current_page' => 1, 'last_page' => 2, 'total' => 2],
+    ], JSON_THROW_ON_ERROR)),
+    new Response(200, ['content-type' => 'application/json'], json_encode([
+        'data' => [$secondProductData],
+        'links' => ['next' => null],
+        'meta' => ['current_page' => 2, 'last_page' => 2, 'total' => 2],
+    ], JSON_THROW_ON_ERROR)),
+    new Response(200, ['content-type' => 'application/json'], json_encode([
+        'data' => $productData,
+    ], JSON_THROW_ON_ERROR)),
+    new Response(201, ['content-type' => 'application/json'], json_encode([
+        'data' => $productData,
+    ], JSON_THROW_ON_ERROR)),
+    new Response(200, ['content-type' => 'application/json'], json_encode([
+        'data' => $updatedProductData,
+    ], JSON_THROW_ON_ERROR)),
+    new Response(201, ['content-type' => 'application/json'], json_encode([
+        'data' => ['uuid' => $invoiceUuid, 'status' => 'draft'],
+    ], JSON_THROW_ON_ERROR)),
+    new Response(200, ['content-type' => 'application/json'], json_encode([
+        'data' => ['uuid' => $invoiceUuid, 'status' => 'draft'],
     ], JSON_THROW_ON_ERROR)),
     new Response(422, ['content-type' => 'application/json'], json_encode([
         'message' => 'Données invalides.',
@@ -94,12 +114,13 @@ $transport = new FakeTransport(
         'message' => 'Trop de requêtes.',
     ], JSON_THROW_ON_ERROR)),
     new Response(403, ['content-type' => 'application/json'], json_encode([
-        'message' => 'Ability product:create requise.',
+        'message' => 'Ability product:update requise.',
     ], JSON_THROW_ON_ERROR)),
 );
 
 $client = new ZelovanceClient('test-secret', 'https://dev.zelovance.com', $transport);
-assertTrue(ZelovanceClient::VERSION === '0.2.0-beta.1', 'La version du client est incorrecte.');
+assertTrue(ZelovanceClient::VERSION === '0.2.0-beta.2', 'La version du client est incorrecte.');
+
 $contacts = $client->contacts()->list();
 assertTrue($contacts->count() === 1, 'La pagination des contacts est incorrecte.');
 assertTrue($contacts->items()[0]['uuid'] === $contactUuid, 'Le contact retourné est incorrect.');
@@ -107,6 +128,19 @@ assertTrue(str_contains($transport->requests[0]['headers']['Authorization'], 'Be
 
 $contact = $client->contacts()->find($contactUuid);
 assertTrue($contact['uuid'] === $contactUuid, 'L’enveloppe data du contact n’est pas retirée.');
+
+$productPage = $client->products()->list(['page' => 1]);
+assertTrue($productPage->count() === 1 && $productPage->hasNextPage(), 'La pagination des articles est incorrecte.');
+assertTrue($transport->requests[2]['url'] === 'https://dev.zelovance.com/api/v1/products?page=1', 'L’URL de liste des articles est incorrecte.');
+
+$allProducts = iterator_to_array($client->products()->all());
+assertTrue(array_column($allProducts, 'uuid') === [$productUuid, $secondProductUuid], 'Le parcours de toutes les pages d’articles est incorrect.');
+assertTrue($transport->requests[3]['url'] === 'https://dev.zelovance.com/api/v1/products?page=1', 'La première URL de parcours des articles est incorrecte.');
+assertTrue($transport->requests[4]['url'] === 'https://dev.zelovance.com/api/v1/products?page=2', 'La seconde URL de parcours des articles est incorrecte.');
+
+$foundProduct = $client->products()->find($productUuid);
+assertTrue($foundProduct['uuid'] === $productUuid && $foundProduct['currency'] === 'EUR', 'L’enveloppe data de l’article n’est pas retirée.');
+assertTrue($transport->requests[5]['url'] === 'https://dev.zelovance.com/api/v1/products/' . $productUuid, 'L’URL de détail d’article est incorrecte.');
 
 $productPayload = [
     'name' => 'Accompagnement au développement',
@@ -120,13 +154,29 @@ $productPayload = [
 
 $product = $client->products()->create($productPayload);
 assertTrue($product['uuid'] === $productUuid, 'L’UUID de l’article créé est incorrect.');
-assertTrue($product['currency'] === 'EUR', 'L’enveloppe data de l’article n’est pas retirée.');
-assertTrue($transport->requests[2]['method'] === 'POST', 'La méthode de création d’article est incorrecte.');
-assertTrue($transport->requests[2]['url'] === 'https://dev.zelovance.com/api/v1/products', 'L’URL de création d’article est incorrecte.');
-assertTrue(
-    json_decode((string) $transport->requests[2]['body'], true, 512, JSON_THROW_ON_ERROR) === $productPayload,
-    'Le payload de création d’article est incorrect.',
-);
+assertTrue($transport->requests[6]['method'] === 'POST', 'La méthode de création d’article est incorrecte.');
+assertTrue($transport->requests[6]['url'] === 'https://dev.zelovance.com/api/v1/products', 'L’URL de création d’article est incorrecte.');
+assertTrue(json_decode((string) $transport->requests[6]['body'], true, 512, JSON_THROW_ON_ERROR) === $productPayload, 'Le payload de création d’article est incorrect.');
+
+$changes = ['type' => 'product', 'name' => 'Licence matérielle'];
+$updatedProduct = $client->products()->update($productUuid, $changes);
+assertTrue($updatedProduct['type'] === 'product', 'L’article mis à jour est incorrect.');
+assertTrue($transport->requests[7]['method'] === 'PATCH', 'La méthode de mise à jour d’article est incorrecte.');
+assertTrue($transport->requests[7]['url'] === 'https://dev.zelovance.com/api/v1/products/' . $productUuid, 'L’URL de mise à jour d’article est incorrecte.');
+assertTrue(json_decode((string) $transport->requests[7]['body'], true, 512, JSON_THROW_ON_ERROR) === $changes, 'Le payload PATCH est incorrect.');
+
+foreach ([
+    static fn (): array => $client->products()->find('invalide'),
+    static fn (): array => $client->products()->update('invalide', ['name' => 'Test']),
+    static fn (): array => $client->products()->update($productUuid, []),
+    static fn (): array => $client->products()->update($productUuid, ['is_active' => false]),
+] as $invalidCall) {
+    try {
+        $invalidCall();
+        throw new RuntimeException('InvalidArgumentException attendue.');
+    } catch (InvalidArgumentException) {
+    }
+}
 
 $draft = InvoiceBuilder::forContactUuid('order-1', $contactUuid)
     ->date('2026-08-03')
@@ -146,10 +196,10 @@ $draft = InvoiceBuilder::forContactUuid('order-1', $contactUuid)
 $invoice = $client->invoices()->create($draft);
 assertTrue($invoice['uuid'] === $invoiceUuid, 'La facture retournée est incorrecte.');
 
-$sentPayload = json_decode((string) $transport->requests[3]['body'], true, 512, JSON_THROW_ON_ERROR);
-assertTrue($sentPayload['lines'][0]['line_type'] === 'section', 'Le titre de section n\'est pas envoyé.');
+$sentPayload = json_decode((string) $transport->requests[8]['body'], true, 512, JSON_THROW_ON_ERROR);
+assertTrue($sentPayload['lines'][0]['line_type'] === 'section', 'Le titre de section n’est pas envoyé.');
 assertTrue($sentPayload['lines'][0]['description'] === 'Phase principale', 'La description de section n’est pas envoyée.');
-assertTrue($sentPayload['lines'][1]['line_type'] === 'item', 'La ligne facturée n\'est pas envoyée.');
+assertTrue($sentPayload['lines'][1]['line_type'] === 'item', 'La ligne facturée n’est pas envoyée.');
 assertTrue($sentPayload['lines'][1]['unit'] === 'none', 'L’unité vide n’est pas normalisée vers none.');
 assertTrue($sentPayload['lines'][1]['description'] === 'Conception et développement.', 'La description de ligne n’est pas envoyée.');
 assertTrue($sentPayload['lines'][1]['product_uuid'] === $productUuid, 'L’UUID de l’article n’est pas transmis à la ligne de facture.');

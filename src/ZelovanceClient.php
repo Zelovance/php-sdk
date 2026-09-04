@@ -24,7 +24,7 @@ use Zelovance\Sdk\Resources\ProductsResource;
 
 final class ZelovanceClient
 {
-    public const VERSION = '0.2.0-beta.1';
+    public const VERSION = '0.2.0-beta.2';
 
     private readonly TransportInterface $transport;
     private readonly string $apiKey;
@@ -96,6 +96,15 @@ final class ZelovanceClient
     public function post(string $path, array $payload): array
     {
         return $this->request('POST', $path, [], $payload);
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
+    public function patch(string $path, array $payload): array
+    {
+        return $this->request('PATCH', $path, [], $payload);
     }
 
     /**

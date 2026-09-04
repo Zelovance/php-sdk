@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0-beta.2 - 2026-09-04
+
+- ajout de la lecture paginée, du parcours complet et de la consultation d’articles ;
+- ajout de la modification partielle d’un article avec `PATCH /api/v1/products/{uuid}` ;
+- validation locale des UUID, du payload de modification vide et des champs non publics ;
+- compatibilité source conservée avec `v0.2.0-beta.1` pour `products()->create()` ;
+- préversion réservée au bêta-test sur `https://dev.zelovance.com`, sans annonce de disponibilité en production.
+
 ## 0.2.0-beta.1 - 2026-09-04
 
 - ajout de `ProductsResource` et de `ZelovanceClient::products()` ;

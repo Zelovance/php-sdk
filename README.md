@@ -2,13 +2,13 @@
 
 SDK PHP autonome pour l’API publique Zelovance `/api/v1`.
 
-## Fonctionnalités de la version 0.2.0-beta.1
+## Fonctionnalités de la version 0.2.0-beta.2
 
 - authentification par clé API technique Bearer ;
 - liste et consultation des contacts ;
 - liste et consultation des factures ;
 - création de factures brouillon ;
-- création d’articles du catalogue ;
+- création, lecture et modification partielle d’articles du catalogue ;
 - lignes `item`, titres `section` et notes `note` ;
 - pagination Laravel ;
 - exceptions dédiées pour les réponses 401, 403, 404, 405, 409, 422 et 429 ;
@@ -17,7 +17,7 @@ SDK PHP autonome pour l’API publique Zelovance `/api/v1`.
 
 Les contacts restent volontairement en lecture seule. L’émission, la modification et la suppression des factures ne sont pas exposées par le SDK, conformément au contrat public actuel.
 
-> Cette préversion est destinée au bêta-test avec `https://dev.zelovance.com`. L’endpoint de création d’articles n’est pas annoncé comme disponible en production.
+> Cette préversion est destinée au bêta-test avec `https://dev.zelovance.com`. Les endpoints Articles ne sont pas annoncés comme disponibles en production.
 
 ## Prérequis
 
@@ -32,15 +32,17 @@ Décompressez l’archive dans votre application :
 
 ```bash
 mkdir -p packages
-unzip zelovance-php-sdk-0.2.0-beta.1.zip -d packages/zelovance-php-sdk
+unzip zelovance-php-sdk-0.2.0-beta.2.zip -d packages/zelovance-php-sdk
 ```
 
 Déclarez ensuite le dépôt local et installez le package :
 
 ```bash
 composer config repositories.zelovance path ./packages/zelovance-php-sdk
-composer require zelovance/php-sdk:0.2.0-beta.1
+composer require zelovance/php-sdk:0.2.0-beta.2
 ```
+
+Depuis `v0.2.0-beta.1`, la mise à niveau vers `v0.2.0-beta.2` est compatible : `products()->create()` conserve sa signature et les méthodes de lecture et de modification sont ajoutées.
 
 Pour éviter un lien symbolique vers le dossier du package :
 
@@ -147,9 +149,9 @@ $invoice = $zelovance->invoices()->create($draft);
 echo $invoice['uuid'];
 ```
 
-## Créer un article en bêta-test
+## Créer, lire et modifier un article en bêta-test
 
-L’exemple suivant crée un article sur l’environnement de développement. La clé API technique doit disposer de l’ability `product:create`. L’article obtenu peut ensuite être référencé dans une ligne de facture avec son UUID.
+Ces exemples utilisent l’environnement de développement. La clé API technique doit disposer de `product:create`, `product:read` ou `product:update` selon l’opération. L’article obtenu peut ensuite être référencé dans une ligne de facture avec son UUID.
 
 ```php
 $product = $zelovance->products()->create([
@@ -182,7 +184,28 @@ $draft = InvoiceBuilder::forContactUuid(
 $invoice = $zelovance->invoices()->create($draft);
 ```
 
-Les seuls champs acceptés lors de la création sont `name`, `code`, `type`, `description`, `unit_price`, `unit` et `vat_rate`. Les statuts de catalogue et d’activation, la devise, le type de vente et les catégories restent gérés par l’API et ne sont pas des options du SDK.
+Lister ou parcourir les articles visibles du catalogue :
+
+```php
+$firstPage = $zelovance->products()->list(['page' => 1]);
+
+foreach ($zelovance->products()->all() as $catalogProduct) {
+    echo $catalogProduct['uuid'] . PHP_EOL;
+}
+
+$product = $zelovance->products()->find($productUuid);
+```
+
+Modifier un article par `PATCH` :
+
+```php
+$product = $zelovance->products()->update($productUuid, [
+    'name' => 'Accompagnement au développement — forfait',
+    'unit_price' => 800,
+]);
+```
+
+Les seuls champs acceptés à la création et en modification sont `name`, `code`, `type`, `description`, `unit_price`, `unit` et `vat_rate`. Une modification doit contenir au moins un de ces champs. Les statuts de catalogue et d’activation, la devise, le type de vente, les catégories et les champs internes restent gérés par l’API et sont refusés localement par le SDK.
 
 Pour ne pas afficher d’unité sur une ligne, utilisez `unit: ''` ou `unit: 'none'`.
 Le builder normalise une chaîne vide vers la valeur API `none`.
@@ -285,7 +308,7 @@ composer test
 
 - aucune création ou modification de contact ;
 - aucune modification, suppression ou émission de facture ;
-- aucune lecture, modification ou suppression d’article ;
+- aucune suppression, archivage ou catégorisation d’article ;
 - les résultats sont retournés sous forme de tableaux PHP afin de conserver le contrat JSON sans perte ;
 - les paramètres de filtrage des listes sont transmis tels quels, mais seuls ceux réellement pris en charge par l’API Zelovance auront un effet.
 
