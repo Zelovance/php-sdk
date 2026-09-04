@@ -20,10 +20,11 @@ use Zelovance\Sdk\Http\NativeCurlTransport;
 use Zelovance\Sdk\Http\Response;
 use Zelovance\Sdk\Resources\ContactsResource;
 use Zelovance\Sdk\Resources\InvoicesResource;
+use Zelovance\Sdk\Resources\ProductsResource;
 
 final class ZelovanceClient
 {
-    public const VERSION = '0.1.0';
+    public const VERSION = '0.2.0-beta.1';
 
     private readonly TransportInterface $transport;
     private readonly string $apiKey;
@@ -33,6 +34,7 @@ final class ZelovanceClient
 
     private ?ContactsResource $contactsResource = null;
     private ?InvoicesResource $invoicesResource = null;
+    private ?ProductsResource $productsResource = null;
 
     public function __construct(
         string $apiKey,
@@ -71,6 +73,11 @@ final class ZelovanceClient
     public function invoices(): InvoicesResource
     {
         return $this->invoicesResource ??= new InvoicesResource($this);
+    }
+
+    public function products(): ProductsResource
+    {
+        return $this->productsResource ??= new ProductsResource($this);
     }
 
     /**

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0-beta.1 - 2026-09-04
+
+- ajout de `ProductsResource` et de `ZelovanceClient::products()` ;
+- création d’articles avec `POST /api/v1/products` ;
+- prise en charge de l’enveloppe Laravel `data` pour l’article créé ;
+- préversion réservée au bêta-test sur `https://dev.zelovance.com`.
+
 ## 0.1.0 - 2026-08-04
 
 - première version testable du SDK PHP Zelovance ;
