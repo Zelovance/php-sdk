@@ -24,7 +24,7 @@ use Zelovance\Sdk\Resources\ProductsResource;
 
 final class ZelovanceClient
 {
-    public const VERSION = '0.2.0-beta.2';
+    public const VERSION = '0.2.0-beta.3';
 
     private readonly TransportInterface $transport;
     private readonly string $apiKey;

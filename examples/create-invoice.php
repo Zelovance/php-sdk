@@ -41,6 +41,7 @@ $draft = InvoiceBuilder::forContactUuid(
     ->date(date('Y-m-d'))
     ->dueDate(date('Y-m-d', strtotime('+30 days')))
     ->operationType('services')
+    ->paymentMethod('virement')
     ->addSection('Conception et préparation')
     ->addItem(
         name: 'Étude et conception',

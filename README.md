@@ -2,7 +2,7 @@
 
 SDK PHP autonome pour l’API publique Zelovance `/api/v1`.
 
-## Fonctionnalités de la version 0.2.0-beta.2
+## Fonctionnalités de la version 0.2.0-beta.3
 
 - authentification par clé API technique Bearer ;
 - liste et consultation des contacts ;
@@ -26,23 +26,31 @@ Les contacts restent volontairement en lecture seule. L’émission, la modifica
 - extension `json` ;
 - Composer 2.
 
+## Installation avec Composer
+
+Après disponibilité de la version sur Packagist :
+
+```bash
+composer require zelovance/php-sdk:0.2.0-beta.3
+```
+
 ## Installation locale avec Composer
 
 Décompressez l’archive dans votre application :
 
 ```bash
 mkdir -p packages
-unzip zelovance-php-sdk-0.2.0-beta.2.zip -d packages/zelovance-php-sdk
+unzip zelovance-php-sdk-0.2.0-beta.3.zip -d packages/zelovance-php-sdk
 ```
 
 Déclarez ensuite le dépôt local et installez le package :
 
 ```bash
 composer config repositories.zelovance path ./packages/zelovance-php-sdk
-composer require zelovance/php-sdk:0.2.0-beta.2
+composer require zelovance/php-sdk:0.2.0-beta.3
 ```
 
-Depuis `v0.2.0-beta.1`, la mise à niveau vers `v0.2.0-beta.2` est compatible : `products()->create()` conserve sa signature et les méthodes de lecture et de modification sont ajoutées.
+Depuis `v0.2.0-beta.2`, la mise à niveau vers `v0.2.0-beta.3` est compatible : le moyen de paiement reste facultatif et les appels existants conservent leur comportement.
 
 Pour éviter un lien symbolique vers le dossier du package :
 
@@ -123,6 +131,7 @@ $draft = InvoiceBuilder::forContactUuid(
     ->date('2026-08-03')
     ->dueDate('2026-09-02')
     ->operationType('services')
+    ->paymentMethod('virement')
     ->addSection('Conception et préparation')
     ->addItem(
         name: 'Étude et conception',
@@ -148,6 +157,10 @@ $invoice = $zelovance->invoices()->create($draft);
 
 echo $invoice['uuid'];
 ```
+
+Le moyen de paiement attendu se renseigne avec `paymentMethod('virement')` ou la clé `payment_method` d’un tableau transmis à `invoices()->create()`. Valeurs acceptées : `virement`, `cheque`, `prelevement`, `carte`, `especes`, `autre`. Il reste facultatif ; `paymentMethod(null)` retire le champ du builder. Les valeurs invalides sont refusées avant l’appel HTTP.
+
+Ce champ n’enregistre aucun encaissement et ne sélectionne pas de compte bancaire. Le correctif serveur est disponible sur Dev. Avec une même clé d’idempotence, changer de moyen de paiement provoque un conflit HTTP `409` ; cela ne modifie pas la facture déjà créée.
 
 ## Créer, lire et modifier un article en bêta-test
 

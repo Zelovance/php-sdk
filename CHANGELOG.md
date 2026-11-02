@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0-beta.3 - 2026-11-02
+
+- ajout de `InvoiceBuilder::paymentMethod()` pour renseigner notamment le virement bancaire ;
+- transmission de `payment_method` à la création de facture et validation locale des valeurs autorisées, avec un builder ou un tableau ;
+- moyen de paiement toujours facultatif, sans encaissement ni sélection automatique de compte bancaire ;
+- exemples mis à jour ; compatibilité conservée avec les appels existants sans moyen de paiement ;
+- correctif serveur correspondant disponible sur Dev ; aucune modification ou émission de facture ajoutée au SDK.
+
 ## 0.2.0-beta.2 - 2026-09-04
 
 - ajout de la lecture paginée, du parcours complet et de la consultation d’articles ;

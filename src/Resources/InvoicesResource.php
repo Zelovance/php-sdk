@@ -15,6 +15,7 @@ final readonly class InvoicesResource
 {
     private const TYPES = ['standard', 'advance_payment', 'progress', 'final'];
     private const LINE_TYPES = ['item', 'section', 'note'];
+    private const PAYMENT_METHODS = ['virement', 'cheque', 'prelevement', 'carte', 'especes', 'autre'];
 
     public function __construct(private ZelovanceClient $client)
     {
@@ -111,6 +112,11 @@ final readonly class InvoicesResource
         }
 
         $lines = $payload['lines'] ?? null;
+
+        if (isset($payload['payment_method'])
+            && (! is_string($payload['payment_method']) || ! in_array($payload['payment_method'], self::PAYMENT_METHODS, true))) {
+            throw new InvalidArgumentException('payment_method doit valoir virement, cheque, prelevement, carte, especes ou autre.');
+        }
 
         if (! is_array($lines) || $lines === []) {
             throw new InvalidArgumentException('La facture doit contenir au moins une ligne.');

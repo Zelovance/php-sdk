@@ -107,6 +107,11 @@ final class InvoiceBuilder
         return $this->setNullableString('payment_instructions', $instructions);
     }
 
+    public function paymentMethod(?string $method): self
+    {
+        return $this->setNullableString('payment_method', $method);
+    }
+
     public function projectUuid(?string $uuid): self
     {
         return $this->setNullableString('project_uuid', $uuid);

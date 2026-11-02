@@ -97,7 +97,7 @@ $transport = new FakeTransport(
         'data' => $updatedProductData,
     ], JSON_THROW_ON_ERROR)),
     new Response(201, ['content-type' => 'application/json'], json_encode([
-        'data' => ['uuid' => $invoiceUuid, 'status' => 'draft'],
+        'data' => ['uuid' => $invoiceUuid, 'status' => 'draft', 'payment_method' => 'virement'],
     ], JSON_THROW_ON_ERROR)),
     new Response(200, ['content-type' => 'application/json'], json_encode([
         'data' => ['uuid' => $invoiceUuid, 'status' => 'draft'],
@@ -119,7 +119,7 @@ $transport = new FakeTransport(
 );
 
 $client = new ZelovanceClient('test-secret', 'https://dev.zelovance.com', $transport);
-assertTrue(ZelovanceClient::VERSION === '0.2.0-beta.2', 'La version du client est incorrecte.');
+assertTrue(ZelovanceClient::VERSION === '0.2.0-beta.3', 'La version du client est incorrecte.');
 
 $contacts = $client->contacts()->list();
 assertTrue($contacts->count() === 1, 'La pagination des contacts est incorrecte.');
@@ -181,6 +181,7 @@ foreach ([
 $draft = InvoiceBuilder::forContactUuid('order-1', $contactUuid)
     ->date('2026-08-03')
     ->dueDate('2026-09-02')
+    ->paymentMethod('virement')
     ->addSection('Développement', 'Phase principale')
     ->addItem(
         name: 'Prestation',
@@ -195,8 +196,10 @@ $draft = InvoiceBuilder::forContactUuid('order-1', $contactUuid)
 
 $invoice = $client->invoices()->create($draft);
 assertTrue($invoice['uuid'] === $invoiceUuid, 'La facture retournée est incorrecte.');
+assertTrue($invoice['payment_method'] === 'virement', 'Le moyen de paiement retourné n’est pas conservé.');
 
 $sentPayload = json_decode((string) $transport->requests[8]['body'], true, 512, JSON_THROW_ON_ERROR);
+assertTrue($sentPayload['payment_method'] === 'virement', 'Le moyen de paiement n’est pas envoyé à l’API.');
 assertTrue($sentPayload['lines'][0]['line_type'] === 'section', 'Le titre de section n’est pas envoyé.');
 assertTrue($sentPayload['lines'][0]['description'] === 'Phase principale', 'La description de section n’est pas envoyée.');
 assertTrue($sentPayload['lines'][1]['line_type'] === 'item', 'La ligne facturée n’est pas envoyée.');
@@ -205,6 +208,21 @@ assertTrue($sentPayload['lines'][1]['description'] === 'Conception et développe
 assertTrue($sentPayload['lines'][1]['product_uuid'] === $productUuid, 'L’UUID de l’article n’est pas transmis à la ligne de facture.');
 assertTrue($sentPayload['lines'][2]['line_type'] === 'note', 'La note de facture n’est pas envoyée.');
 assertTrue($sentPayload['lines'][2]['description'] === 'Les travaux suivent le planning validé.', 'La description de note n’est pas envoyée.');
+
+$requestCount = count($transport->requests);
+foreach (['inconnu', 42] as $invalidPaymentMethod) {
+    try {
+        $client->invoices()->create([...$draft->toArray(), 'payment_method' => $invalidPaymentMethod]);
+        throw new RuntimeException('Un moyen de paiement invalide doit être refusé.');
+    } catch (InvalidArgumentException) {
+    }
+}
+assertTrue(count($transport->requests) === $requestCount, 'Un moyen de paiement invalide a déclenché une requête HTTP.');
+
+$optionalPayment = InvoiceBuilder::forContactUuid('order-optional-payment', $contactUuid);
+assertTrue(! array_key_exists('payment_method', $optionalPayment->toArray()), 'Le moyen de paiement doit rester facultatif.');
+$optionalPayment->paymentMethod('virement')->paymentMethod(null);
+assertTrue(! array_key_exists('payment_method', $optionalPayment->toArray()), 'paymentMethod(null) doit retirer le moyen de paiement.');
 
 $foundInvoice = $client->invoices()->find($invoiceUuid);
 assertTrue($foundInvoice['uuid'] === $invoiceUuid, 'L’enveloppe data de la facture n’est pas retirée.');
